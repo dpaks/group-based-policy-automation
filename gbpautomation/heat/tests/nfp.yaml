@@ -1,0 +1,39 @@
+heat_template_version: 2016-04-08
+
+parameters:
+  port-ids:
+    type: comma_delimited_list
+    label: Port Id
+    description: Port IDs that have to be attached to the instance
+  image-id:
+    type: string
+    label: Glance Image Name or Id
+    description: Name or ID of the glance image to be booted up
+  rule:
+    type: string
+    label: Radius rule to be configured
+    description: Radius rule to be configured
+
+resources:
+  configure-radius:
+    type: OS::Nfp::ConfigureRadius
+    properties:
+       name: radius-rules
+       rule: { get_param: rule }
+  radius-server:
+    type: OS::Nova::Server
+    properties:
+        name: radius
+        image: { get_param: image-id }
+        flavor: m1.small
+        networks:
+            repeat:
+              for_each:
+                port-id: { get_param: port-ids }
+              template:
+                port: port-id
+
+outputs:
+  deepak:
+    description: Just to print my name
+    value: Have a wonderful HOT day, Deepak! :) hihi
