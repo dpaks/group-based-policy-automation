@@ -5,26 +5,21 @@ parameters:
     type: comma_delimited_list
     label: Port Id
     description: Port IDs that have to be attached to the instance
-  image-id:
+  image-name:
     type: string
-    label: Glance Image Name or Id
-    description: Name or ID of the glance image to be booted up
-  rule:
+    label: Glance Image Name
+    description: Name of the glance image to be booted up
+  config-data:
     type: string
-    label: Radius rule to be configured
-    description: Radius rule to be configured
+    label: Radius rules to be configured
+    description: Radius rules to be configured
 
 resources:
-  configure-radius:
-    type: OS::Nfp::ConfigureRadius
-    properties:
-       name: radius-rules
-       rule: { get_param: rule }
-  radius-server:
+  launch-instance:
     type: OS::Nova::Server
     properties:
         name: radius
-        image: { get_param: image-id }
+        image: { get_param: image-name }
         flavor: m1.small
         networks:
             repeat:
@@ -32,6 +27,17 @@ resources:
                 port-id: { get_param: port-ids }
               template:
                 port: port-id
+  check_device_up:
+    type: OS::Nfp::CheckDeviceUp
+    depends_on: launch-instance
+    properties:
+        mgmt_ip: { get_attr: [ launch-instance, networks, l2p_svc_management_ptg, 0]}
+  configure-device:
+    type: OS::Nfp::ConfigureDevice
+    depends_on: check_device_up
+    properties:
+       name: radius-rules
+       data: { get_param: config-data }
 
 outputs:
   deepak:
